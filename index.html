@@ -6,9 +6,11 @@
     <title>Calculadora y Tabla de Posiciones - Ronda Final CONCACAF Mundial 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Aquí iría tu código de Google Analytics -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            padding-bottom: 80px; /* Espacio para el banner de consentimiento */
         }
         input::placeholder {
             color: #9ca3af;
@@ -33,9 +35,26 @@
         .tab-content.active {
             display: grid;
         }
+        /* Estilos para el banner de consentimiento */
+        #consent-banner {
+            transition: transform 0.3s ease-in-out;
+        }
+        #consent-banner.hidden {
+            transform: translateY(100%);
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X0BBBN1CB3"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-X0BBBN1CB3');
+    </script>
 
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-8">
@@ -82,112 +101,100 @@
         </footer>
     </div>
 
+    <!-- Banner de Consentimiento -->
+    <div id="consent-banner" class="fixed bottom-0 left-0 right-0 bg-gray-800 text-white p-4 flex flex-col sm:flex-row justify-between items-center z-50">
+        <p class="text-sm text-center sm:text-left mb-2 sm:mb-0 mr-4">
+            Utilizamos almacenamiento local para guardar tus predicciones y Google Analytics para mejorar la experiencia. Al continuar, aceptas su uso.
+        </p>
+        <button id="accept-consent-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex-shrink-0">
+            Entendido
+        </button>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Definición de equipos y partidos por grupo
+            // --- CONSTANTES Y VARIABLES GLOBALES ---
+            const SCORES_STORAGE_KEY = 'concacafScores_v1';
+            const CONSENT_STORAGE_KEY = 'concacafConsent_v1';
+
             const GROUPS_DATA = [
                 {
-                    id: 'group-a',
-                    name: 'Grupo A',
-                    teams: [
-                        { id: 'PAN', name: 'Panamá', flag: '🇵🇦' },
-                        { id: 'SUR', name: 'Surinam', flag: '🇸🇷' },
-                        { id: 'GUA', name: 'Guatemala', flag: '🇬🇹' },
-                        { id: 'SLV', name: 'El Salvador', flag: '🇸🇻' }
-                    ],
-                    matches: [
-                        { date: '04 Sep 2025', home: 'SUR', away: 'PAN' },
-                        { date: '04 Sep 2025', home: 'GUA', away: 'SLV' },
-                        { date: '08 Sep 2025', home: 'SLV', away: 'SUR' },
-                        { date: '08 Sep 2025', home: 'PAN', away: 'GUA' },
-                        { date: '10 Oct 2025', home: 'SUR', away: 'GUA' },
-                        { date: '10 Oct 2025', home: 'SLV', away: 'PAN' },
-                        { date: '14 Oct 2025', home: 'SLV', away: 'GUA' },
-                        { date: '14 Oct 2025', home: 'PAN', away: 'SUR' },
-                        { date: '13 Nov 2025', home: 'GUA', away: 'PAN' },
-                        { date: '13 Nov 2025', home: 'SUR', away: 'SLV' },
-                        { date: '18 Nov 2025', home: 'PAN', away: 'SLV' },
-                        { date: '18 Nov 2025', home: 'GUA', away: 'SUR' },
-                    ]
+                    id: 'group-a', name: 'Grupo A',
+                    teams: [ { id: 'PAN', name: 'Panamá', flag: '🇵🇦' }, { id: 'SUR', name: 'Surinam', flag: '🇸🇷' }, { id: 'GUA', name: 'Guatemala', flag: '🇬🇹' }, { id: 'SLV', name: 'El Salvador', flag: '🇸🇻' } ],
+                    matches: [ { home: 'SUR', away: 'PAN' }, { home: 'GUA', away: 'SLV' }, { home: 'SLV', away: 'SUR' }, { home: 'PAN', away: 'GUA' }, { home: 'SUR', away: 'GUA' }, { home: 'SLV', away: 'PAN' }, { home: 'SLV', away: 'GUA' }, { home: 'PAN', away: 'SUR' }, { home: 'GUA', away: 'PAN' }, { home: 'SUR', away: 'SLV' }, { home: 'PAN', away: 'SLV' }, { home: 'GUA', away: 'SUR' } ]
                 },
                 {
-                    id: 'group-b',
-                    name: 'Grupo B',
-                    teams: [
-                        { id: 'BER', name: 'Bermuda', flag: '🇧🇲' },
-                        { id: 'JAM', name: 'Jamaica', flag: '🇯🇲' },
-                        { id: 'TRI', name: 'Trinidad y Tobago', flag: '🇹🇹' },
-                        { id: 'CUW', name: 'Curazao', flag: '🇨🇼' }
-                    ],
-                    matches: [
-                        { date: '05 Sep 2025', home: 'BER', away: 'JAM' },
-                        { date: '05 Sep 2025', home: 'TRI', away: 'CUW' },
-                        { date: '09 Sep 2025', home: 'JAM', away: 'TRI' },
-                        { date: '09 Sep 2025', home: 'CUW', away: 'BER' },
-                        { date: '10 Oct 2025', home: 'BER', away: 'TRI' },
-                        { date: '10 Oct 2025', home: 'CUW', away: 'JAM' },
-                        { date: '14 Oct 2025', home: 'JAM', away: 'BER' },
-                        { date: '14 Oct 2025', home: 'CUW', away: 'TRI' },
-                        { date: '13 Nov 2025', home: 'TRI', away: 'JAM' },
-                        { date: '13 Nov 2025', home: 'BER', away: 'CUW' },
-                        { date: '18 Nov 2025', home: 'TRI', away: 'BER' },
-                        { date: '18 Nov 2025', home: 'JAM', away: 'CUW' },
-                    ]
+                    id: 'group-b', name: 'Grupo B',
+                    teams: [ { id: 'BER', name: 'Bermuda', flag: '🇧🇲' }, { id: 'JAM', name: 'Jamaica', flag: '🇯🇲' }, { id: 'TRI', name: 'Trinidad y Tobago', flag: '🇹🇹' }, { id: 'CUW', name: 'Curazao', flag: '🇨🇼' } ],
+                    matches: [ { home: 'BER', away: 'JAM' }, { home: 'TRI', away: 'CUW' }, { home: 'JAM', away: 'TRI' }, { home: 'CUW', away: 'BER' }, { home: 'BER', away: 'TRI' }, { home: 'CUW', away: 'JAM' }, { home: 'JAM', away: 'BER' }, { home: 'CUW', away: 'TRI' }, { home: 'TRI', away: 'JAM' }, { home: 'BER', away: 'CUW' }, { home: 'TRI', away: 'BER' }, { home: 'JAM', away: 'CUW' } ]
                 },
                 {
-                    id: 'group-c',
-                    name: 'Grupo C',
-                    teams: [
-                        { id: 'HAI', name: 'Haití', flag: '🇭🇹' },
-                        { id: 'HON', name: 'Honduras', flag: '🇭🇳' },
-                        { id: 'NCA', name: 'Nicaragua', flag: '🇳🇮' },
-                        { id: 'CRC', name: 'Costa Rica', flag: '🇨🇷' }
-                    ],
-                    matches: [
-                        { date: '05 Sep 2025', home: 'HAI', away: 'HON' },
-                        { date: '05 Sep 2025', home: 'NCA', away: 'CRC' },
-                        { date: '09 Sep 2025', home: 'CRC', away: 'HAI' },
-                        { date: '09 Sep 2025', home: 'HON', away: 'NCA' },
-                        { date: '09 Oct 2025', home: 'HON', away: 'CRC' },
-                        { date: '09 Oct 2025', home: 'NCA', away: 'HAI' },
-                        { date: '13 Oct 2025', home: 'CRC', away: 'NCA' },
-                        { date: '13 Oct 2025', home: 'HON', away: 'HAI' },
-                        { date: '13 Nov 2025', home: 'NCA', away: 'HON' },
-                        { date: '13 Nov 2025', home: 'HAI', away: 'CRC' },
-                        { date: '18 Nov 2025', home: 'CRC', away: 'HON' },
-                        { date: '18 Nov 2025', home: 'HAI', away: 'NCA' },
-                    ]
+                    id: 'group-c', name: 'Grupo C',
+                    teams: [ { id: 'HAI', name: 'Haití', flag: '🇭🇹' }, { id: 'HON', name: 'Honduras', flag: '🇭🇳' }, { id: 'NCA', name: 'Nicaragua', flag: '🇳🇮' }, { id: 'CRC', name: 'Costa Rica', flag: '🇨🇷' } ],
+                    matches: [ { home: 'HAI', away: 'HON' }, { home: 'NCA', away: 'CRC' }, { home: 'CRC', away: 'HAI' }, { home: 'HON', away: 'NCA' }, { home: 'HON', away: 'CRC' }, { home: 'NCA', away: 'HAI' }, { home: 'CRC', away: 'NCA' }, { home: 'HON', away: 'HAI' }, { home: 'NCA', away: 'HON' }, { home: 'HAI', away: 'CRC' }, { home: 'CRC', away: 'HON' }, { home: 'HAI', away: 'NCA' } ]
                 }
             ];
             
-            // Estado de la aplicación
             let appState = [];
 
             const groupsContainer = document.getElementById('groups-container');
             const calculateBtn = document.getElementById('calculate-btn');
             const resetBtn = document.getElementById('reset-btn');
             const tabButtons = document.querySelectorAll('.tab-btn');
+            const consentBanner = document.getElementById('consent-banner');
+            const acceptConsentBtn = document.getElementById('accept-consent-btn');
+
+            // --- LÓGICA DE ALMACENAMIENTO LOCAL ---
+            function saveScoresToLocalStorage() {
+                const scoresToSave = {};
+                appState.forEach(group => {
+                    group.matches.forEach(match => {
+                        if (match.homeScore !== null || match.awayScore !== null) {
+                            scoresToSave[match.uniqueId] = {
+                                home: match.homeScore,
+                                away: match.awayScore
+                            };
+                        }
+                    });
+                });
+                localStorage.setItem(SCORES_STORAGE_KEY, JSON.stringify(scoresToSave));
+            }
+
+            function loadScoresFromLocalStorage() {
+                const savedScores = localStorage.getItem(SCORES_STORAGE_KEY);
+                if (!savedScores) return null;
+                try {
+                    return JSON.parse(savedScores);
+                } catch (e) {
+                    console.error("Error al leer los marcadores guardados:", e);
+                    return null;
+                }
+            }
 
             // --- INICIALIZACIÓN ---
             function initializeApp() {
-                // Prepara el estado inicial de la aplicación a partir de los datos estáticos
+                const loadedScores = loadScoresFromLocalStorage();
+
                 appState = GROUPS_DATA.map(group => {
-                    const teamsWithStats = group.teams.map(team => ({
-                        ...team, pts: 0, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0
-                    }));
-                    const matchesWithScores = group.matches.map((match, index) => ({
-                        ...match,
-                        homeScore: null,
-                        awayScore: null,
-                        homeTeam: group.teams.find(t => t.id === match.home),
-                        awayTeam: group.teams.find(t => t.id === match.away),
-                        uniqueId: `${group.id}-match-${index}`
-                    }));
+                    const teamsWithStats = group.teams.map(team => ({ ...team, pts: 0, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0 }));
+                    const matchesWithScores = group.matches.map((match, index) => {
+                        const uniqueId = `${group.id}-match-${index}`;
+                        const savedMatch = loadedScores ? loadedScores[uniqueId] : null;
+                        return {
+                            ...match,
+                            homeScore: savedMatch ? savedMatch.home : null,
+                            awayScore: savedMatch ? savedMatch.away : null,
+                            homeTeam: group.teams.find(t => t.id === match.home),
+                            awayTeam: group.teams.find(t => t.id === match.away),
+                            uniqueId: uniqueId
+                        };
+                    });
                     return { ...group, teams: teamsWithStats, matches: matchesWithScores };
                 });
 
                 renderAllGroupsDOM();
                 calculateAllStandings(); 
+                handleConsent();
             }
 
             // --- RENDERIZADO (VISTA) ---
@@ -199,68 +206,50 @@
                     groupContainer.className = `tab-content grid-cols-1 lg:grid-cols-3 gap-8 ${index === 0 ? 'active' : ''}`;
                     
                     groupContainer.innerHTML = `
-                        <!-- Columna de Partidos -->
                         <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-4 md:p-6">
                             <h2 class="text-2xl font-bold mb-6 text-center">Partidos del ${group.name}</h2>
-                            <div id="match-list-${group.id}" class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                                ${renderMatchesForGroup(group)}
-                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">${renderMatchesForGroup(group)}</div>
                         </div>
-
-                        <!-- Columna de Tabla de Posiciones -->
                         <div class="lg:col-span-1 bg-white rounded-2xl shadow-lg p-4 md:p-6">
                             <h2 class="text-2xl font-bold mb-6 text-center">Tabla de Posiciones</h2>
                             <div class="overflow-x-auto">
                                 <table class="w-full min-w-full text-sm text-left text-gray-500">
                                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                                         <tr>
-                                            <th scope="col" class="pl-4 pr-2 py-3 text-center">#</th>
-                                            <th scope="col" class="px-2 py-3">Equipo</th>
-                                            <th scope="col" class="px-2 py-3 text-center" title="Puntos">Pts</th>
-                                            <th scope="col" class="px-2 py-3 text-center" title="Partidos Jugados">PJ</th>
-                                            <th scope="col" class="px-2 py-3 text-center" title="Ganados">G</th>
-                                            <th scope="col" class="px-2 py-3 text-center" title="Empatados">E</th>
-                                            <th scope="col" class="px-2 py-3 text-center" title="Perdidos">P</th>
-                                            <th scope="col" class="px-2 py-3 text-center" title="Diferencia de Goles">DG</th>
+                                            <th scope="col" class="pl-4 pr-2 py-3 text-center">#</th><th scope="col" class="px-2 py-3">Equipo</th><th scope="col" class="px-2 py-3 text-center" title="Puntos">Pts</th><th scope="col" class="px-2 py-3 text-center" title="Partidos Jugados">PJ</th><th scope="col" class="px-2 py-3 text-center" title="Ganados">G</th><th scope="col" class="px-2 py-3 text-center" title="Empatados">E</th><th scope="col" class="px-2 py-3 text-center" title="Perdidos">P</th><th scope="col" class="px-2 py-3 text-center" title="Diferencia de Goles">DG</th>
                                         </tr>
                                     </thead>
                                     <tbody id="standings-body-${group.id}"></tbody>
                                 </table>
                             </div>
                             <div class="mt-6 space-y-2 text-sm">
-                                <div class="flex items-center">
-                                    <div class="w-4 h-4 rounded-full bg-green-500 mr-2 border-2 border-green-600"></div>
-                                    <span>Clasificación directa al Mundial</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <div class="w-4 h-4 rounded-full bg-blue-500 mr-2 border-2 border-blue-600"></div>
-                                    <span>Clasificación a Repechaje</span>
-                                </div>
+                                <div class="flex items-center"><div class="w-4 h-4 rounded-full bg-green-500 mr-2 border-2 border-green-600"></div><span>Clasificación directa al Mundial</span></div>
+                                <div class="flex items-center"><div class="w-4 h-4 rounded-full bg-blue-500 mr-2 border-2 border-blue-600"></div><span>Clasificación a Repechaje</span></div>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                     groupsContainer.appendChild(groupContainer);
                 });
             }
 
             function renderMatchesForGroup(group) {
-                return group.matches.map(match => `
+                return group.matches.map(match => {
+                    const homeValue = match.homeScore !== null ? `value="${match.homeScore}"` : '';
+                    const awayValue = match.awayScore !== null ? `value="${match.awayScore}"` : '';
+                    return `
                     <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
                         <div class="flex items-center w-2/5 text-right justify-end">
-                            <span class="mr-2 hidden sm:inline">${match.homeTeam.name}</span>
-                            <span class="text-2xl">${match.homeTeam.flag}</span>
+                            <span class="mr-2 hidden sm:inline">${match.homeTeam.name}</span><span class="text-2xl">${match.homeTeam.flag}</span>
                         </div>
                         <div class="flex items-center justify-center space-x-1 w-1/5">
-                            <input type="number" min="0" class="score-input w-8 h-8 text-center rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" data-match-id="${match.uniqueId}" data-team="home" placeholder="-">
+                            <input type="number" min="0" class="score-input w-8 h-8 text-center rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500" data-match-id="${match.uniqueId}" data-team="home" placeholder="-" ${homeValue}>
                             <span class="font-bold text-gray-400">-</span>
-                            <input type="number" min="0" class="score-input w-8 h-8 text-center rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" data-match-id="${match.uniqueId}" data-team="away" placeholder="-">
+                            <input type="number" min="0" class="score-input w-8 h-8 text-center rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500" data-match-id="${match.uniqueId}" data-team="away" placeholder="-" ${awayValue}>
                         </div>
                         <div class="flex items-center w-2/5">
-                            <span class="text-2xl">${match.awayTeam.flag}</span>
-                            <span class="ml-2 hidden sm:inline">${match.awayTeam.name}</span>
+                            <span class="text-2xl">${match.awayTeam.flag}</span><span class="ml-2 hidden sm:inline">${match.awayTeam.name}</span>
                         </div>
-                    </div>
-                `).join('');
+                    </div>`;
+                }).join('');
             }
 
             function renderStandingsForGroup(group) {
@@ -275,94 +264,64 @@
                 standingsBodyEl.innerHTML = '';
                 sortedStats.forEach((team, index) => {
                     const pos = index + 1;
-                    let rowClass = 'bg-white border-b';
-                    let posClass = '';
-
-                    if (pos === 1) { // Clasificación directa
-                        rowClass = 'bg-green-50 border-b border-green-200 font-semibold text-gray-800';
-                        posClass = 'bg-green-500 text-white';
-                    } else if (pos === 2) { // Repechaje
-                        rowClass = 'bg-blue-50 border-b border-blue-200 font-medium text-gray-700';
-                        posClass = 'bg-blue-500 text-white';
-                    }
-
+                    let rowClass = 'bg-white border-b'; let posClass = '';
+                    if (pos === 1) { rowClass = 'bg-green-50 border-b border-green-200 font-semibold text-gray-800'; posClass = 'bg-green-500 text-white'; } 
+                    else if (pos === 2) { rowClass = 'bg-blue-50 border-b border-blue-200 font-medium text-gray-700'; posClass = 'bg-blue-500 text-white'; }
                     const tr = document.createElement('tr');
                     tr.className = rowClass;
-                    tr.innerHTML = `
-                        <td class="pl-4 pr-2 py-3 text-center"><div class="w-6 h-6 rounded-full flex items-center justify-center ${posClass} mx-auto font-bold text-xs">${pos}</div></td>
-                        <td class="px-2 py-3 flex items-center"><span class="text-xl mr-3">${team.flag}</span> ${team.name}</td>
-                        <td class="px-2 py-3 text-center font-bold text-gray-900">${team.pts}</td>
-                        <td class="px-2 py-3 text-center">${team.pj}</td>
-                        <td class="px-2 py-3 text-center">${team.g}</td>
-                        <td class="px-2 py-3 text-center">${team.e}</td>
-                        <td class="px-2 py-3 text-center">${team.p}</td>
-                        <td class="px-2 py-3 text-center">${team.dg}</td>
-                    `;
+                    tr.innerHTML = `<td class="pl-4 pr-2 py-3 text-center"><div class="w-6 h-6 rounded-full flex items-center justify-center ${posClass} mx-auto font-bold text-xs">${pos}</div></td><td class="px-2 py-3 flex items-center"><span class="text-xl mr-3">${team.flag}</span> ${team.name}</td><td class="px-2 py-3 text-center font-bold text-gray-900">${team.pts}</td><td class="px-2 py-3 text-center">${team.pj}</td><td class="px-2 py-3 text-center">${team.g}</td><td class="px-2 py-3 text-center">${team.e}</td><td class="px-2 py-3 text-center">${team.p}</td><td class="px-2 py-3 text-center">${team.dg}</td>`;
                     standingsBodyEl.appendChild(tr);
                 });
             }
 
             // --- LÓGICA DE CÁLCULO ---
             function calculateAllStandings() {
-                // 1. Leer todos los marcadores de los inputs
                 const scoreInputs = document.querySelectorAll('.score-input');
                 scoreInputs.forEach(input => {
                     const matchId = input.dataset.matchId;
                     const teamType = input.dataset.team;
                     const score = input.value === '' ? null : parseInt(input.value);
-                    
                     for (const group of appState) {
                         const match = group.matches.find(m => m.uniqueId === matchId);
-                        if (match) {
-                            if (teamType === 'home') match.homeScore = score;
-                            else match.awayScore = score;
-                            break;
-                        }
+                        if (match) { if (teamType === 'home') match.homeScore = score; else match.awayScore = score; break; }
                     }
                 });
 
-                // 2. Iterar sobre cada grupo para calcular sus estadísticas
                 appState.forEach(group => {
-                    group.teams.forEach(team => {
-                        team.pts = 0; team.pj = 0; team.g = 0; team.e = 0; team.p = 0;
-                        team.gf = 0; team.gc = 0; team.dg = 0;
-                    });
-
+                    group.teams.forEach(team => { team.pts = 0; team.pj = 0; team.g = 0; team.e = 0; team.p = 0; team.gf = 0; team.gc = 0; team.dg = 0; });
                     group.matches.forEach(match => {
                         const { homeScore, awayScore } = match;
                         if (homeScore === null || awayScore === null || isNaN(homeScore) || isNaN(awayScore)) return;
-
                         const homeTeam = group.teams.find(t => t.id === match.homeTeam.id);
                         const awayTeam = group.teams.find(t => t.id === match.awayTeam.id);
-
-                        homeTeam.pj++; awayTeam.pj++;
-                        homeTeam.gf += homeScore; awayTeam.gf += awayScore;
-                        homeTeam.gc += awayScore; awayTeam.gc += homeScore;
-
-                        if (homeScore > awayScore) {
-                            homeTeam.pts += 3; homeTeam.g++; awayTeam.p++;
-                        } else if (awayScore > homeScore) {
-                            awayTeam.pts += 3; awayTeam.g++; homeTeam.p++;
-                        } else {
-                            homeTeam.pts += 1; awayTeam.pts += 1; homeTeam.e++; awayTeam.e++;
-                        }
+                        homeTeam.pj++; awayTeam.pj++; homeTeam.gf += homeScore; awayTeam.gf += awayScore; homeTeam.gc += awayScore; awayTeam.gc += homeScore;
+                        if (homeScore > awayScore) { homeTeam.pts += 3; homeTeam.g++; awayTeam.p++; } 
+                        else if (awayScore > homeScore) { awayTeam.pts += 3; awayTeam.g++; homeTeam.p++; } 
+                        else { homeTeam.pts += 1; awayTeam.pts += 1; homeTeam.e++; awayTeam.e++; }
                     });
-
-                    group.teams.forEach(team => {
-                        team.dg = team.gf - team.gc;
-                    });
-
-                    // 3. Re-renderizar la tabla del grupo
+                    group.teams.forEach(team => { team.dg = team.gf - team.gc; });
                     renderStandingsForGroup(group);
                 });
             }
             
             // --- MANEJADORES DE EVENTOS ---
-            calculateBtn.addEventListener('click', calculateAllStandings);
+            function handleConsent() {
+                if (localStorage.getItem(CONSENT_STORAGE_KEY)) {
+                    consentBanner.classList.add('hidden');
+                } else {
+                    consentBanner.classList.remove('hidden');
+                }
+            }
+
+            calculateBtn.addEventListener('click', () => {
+                calculateAllStandings();
+                saveScoresToLocalStorage();
+            });
 
             resetBtn.addEventListener('click', () => {
                 const scoreInputs = document.querySelectorAll('.score-input');
                 scoreInputs.forEach(input => input.value = '');
+                localStorage.removeItem(SCORES_STORAGE_KEY);
                 initializeApp();
             });
 
@@ -370,13 +329,15 @@
                 button.addEventListener('click', () => {
                     tabButtons.forEach(btn => btn.classList.remove('active'));
                     button.classList.add('active');
-
                     const tabId = button.dataset.tab;
-                    document.querySelectorAll('.tab-content').forEach(content => {
-                        content.classList.remove('active');
-                    });
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
                     document.getElementById(tabId).classList.add('active');
                 });
+            });
+
+            acceptConsentBtn.addEventListener('click', () => {
+                localStorage.setItem(CONSENT_STORAGE_KEY, 'true');
+                consentBanner.classList.add('hidden');
             });
 
             // Iniciar la aplicación
